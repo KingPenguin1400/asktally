@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Math Tutor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+    <div class="container">
+        <header class="topbar">
+            <div class="topbar-left">
+                <div class="day-label" id="day-label">Enter Day of the Week</div>
+                <div class="greeting">
+                    <h1>Hi, <span id="name-span">Learner!</span></h1>
+                </div>
+            </div>
+            <div class="streak-badge">
+                <span class="star">★</span>
+                <span>4-day streak</span>
+            </div>
+        </header>
+
+        <main class="main-panel">
+            <div class="welcome-row">
+                <div class="face-badge" aria-label="smile">
+                    <img src="/img/smile.png" alt="smile"/>
+                    <!--<div class="face-emoji" aria-hidden="true">😊</div>-->
+                </div>
+
+                <div class="headline-block">
+                    <p id="headline">Stuck on a problem?</p>
+                    <p id="subheadline">Snap a photo and Tally works through it with you, one step at a time.</p>
+                </div>
+            </div>
+
+            <br>
+            <div class="actions">
+                <button class="primary-action" id="photo-button" type="button">
+                    <span class="icon">📷</span>
+                    <span>Snap my homework</span>
+                </button>
+                <br>
+                <button class="secondary-action" id="type-button" type="button">
+                    <span class="icon">⌨️</span>
+                    <span>Type or say it instead</span>
+                </button>
+            </div>
+
+            <div class="photoPopupOverlay">
+                <div class="photoPopup">
+                    <input id="imageInput" type="file" accept="image/jpeg,image/png,image/webp" maxlength="1"/>
+                    <button id="closeImageButton">&times;</button>
+                    <br>
+                    <label for="Please Enter"></label>
+                    <textarea id="primaryTextInput" placeholder="What are you stuck on? Ask about your photo? Ask me anything about this problem..." rows="20" cols="30"></textarea>
+                    <!--<input id="primaryTextInput" type="text" placeholder="What are you stuck on? Ask me anything about this problem...">-->
+                    <br>
+                    <button id="submitImageButton">Ask Tally</button>
+                </div>
+            </div>
+
+            <form id="tutor-form" class="tutor-form" hidden>
+                <label for="gemini-key">Gemini API key</label>
+                <input id="gemini-key" type="password" autocomplete="off" placeholder="Paste your API key for this session" />
+                <p class="key-warning">For local demos only. A browser key can be exposed; do not publish this app with a real key.</p>
+                <label for="question">Your question</label>
+                <textarea id="question" name="question" rows="3" placeholder="Type a math problem or ask about your photo"></textarea>
+                <p id="image-name" class="image-name"></p>
+                <button id="ask-button" type="submit">Ask Tally</button>
+            </form>
+            <p id="tutor-status" class="tutor-status" role="status" aria-live="polite" hidden></p>
+            <section id="tutor-answer" class="tutor-answer" aria-live="polite" hidden>
+                <h2>Tally's explanation</h2>
+                <p id="answer-text"></p>
+            </section>
+        </main>
+
+        <section class="homework">
+            <h2>Today's homework</h2>
+
+            <article class="homework-item blue-item">
+                <div class="item-icon">×</div>
+                <div class="item-copy">
+                <div class="title-row">
+                    <h3>Multiplying by 3 and 4</h3>
+                </div>
+                <p>Worksheet · 2 of 6 done</p>
+                </div>
+                <div class="arrow">›</div>
+                <div class="progress-bar"><span></span></div>
+            </article>
+
+            <article class="homework-item pink-item">
+                <div class="item-icon">＋</div>
+                <div class="item-copy">
+                    <div class="title-row">
+                        <h3>Word problems: shopping</h3>
+                    </div>
+                    <p>Not started · 5 problems</p>
+                </div>
+                <div class="arrow">›</div>
+                <div class="progress-bar"><span></span></div>
+            </article>
+        </section>
+
+        <section class="challenges">
+        <h2>Pick a challenge</h2>
+
+            <div class="challenge-grid">
+                <article class="challenge-card mint-card">
+                    <div class="challenge-icon">◌</div>
+                    <div class="challenge-name">Fractions</div>
+                </article>
+
+                <article class="challenge-card blush-card">
+                    <div class="challenge-icon">▭</div>
+                    <div class="challenge-name">Place<br />value</div>
+                </article>
+
+                <article class="challenge-card cream-card">
+                    <div class="challenge-icon">◔</div>
+                    <div class="challenge-name">Clocks</div>
+                </article>
+            </div>
+        </section>
+
+        <nav class="bottom-nav" aria-label="Main navigation">
+            <button class="nav-item active" aria-label="Home">
+                <span class="nav-icon">⌂</span>
+            </button>
+            <button class="nav-item" aria-label="Notebook">
+                <span class="nav-icon">▣</span>
+            </button>
+            <button class="nav-item" aria-label="Tasks">
+                <span class="nav-icon">✦</span>
+            </button>
+            <button class="nav-item" aria-label="Profile">
+                <span class="nav-icon">☆</span>
+            </button>
+        </nav>
+
+        <div class="name-input-container">
+            <input type="text" id="name-input" placeholder="Enter your name"/>
+            <button id="save-name-button">Save</button>
+        </div>
+    </div>
+
+    <script src="app.js" type="module"></script>
+    <script src="script.js" type="module"></script>
+</body>
+</html>

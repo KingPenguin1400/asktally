@@ -1,0 +1,251 @@
+/* --- FREDOKA --- */
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/Fredoka/static/Fredoka-Medium.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/Fredoka/static/Fredoka-SemiBold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/Fredoka/static/Fredoka-Bold.ttf') format('truetype');
+}
+
+/* --- NUNITO --- */
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/Nunito/static/Nunito-SemiBold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./fonts/Nunito-Bold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('/fonts/Nunito/static/Nunito-ExtraBold.ttf') format('truetype');
+}
+
+body{
+    margin: 0;
+    font-family: "Fredoka";
+    background: #f0f5ff;
+    color: #1f2937;
+    line-height: 1.6;
+}
+
+.topbar{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.topbar .topbar-left{
+    display: flex;
+    text-align: left;
+    flex-direction: column;
+    padding-top: 1rem;
+    padding-left: 1rem;
+    gap: 0;
+}
+
+.topbar .topbar-left .day-label{
+    font-size: 1.2rem;
+    font-weight: normal;
+    color: #505885;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+.topbar .topbar-left .greeting h1{
+    margin: 0;
+    padding-top: 0;
+    padding-bottom: 1rem;
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.topbar .streak-badge{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-left: auto;
+    margin-right: 1rem;
+    width: fit-content;
+    background: #febe30;
+    color: #1f2937;
+    padding: 0.5rem 1rem;
+    border-radius: 99999px;
+}
+
+.main-panel{
+    display: flex;
+    flex-direction: column;
+    background-color: #4b5bff;
+    color: #ffffff;
+    border-radius: 28px;
+    margin: 20px 20px 0;
+    padding: 20px 20px 22px;
+    gap: 16px;
+}
+
+.main-panel .welcome-row{
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.main-panel .welcome-row .face-badge img{
+    width: 72px;
+    height: 80px;
+}
+
+.main-panel .welcome-row .headline-block #headline{
+    margin: 0;
+    font-family: 'Fredoka',sans-serif;
+    font-weight: 600;
+    font-size: 26px;
+    line-height: 1.15;
+}
+
+.main-panel .welcome-row .headline-block #subheadline{
+    margin: 6px 0 0;
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.35;
+}
+
+.main-panel .actions button{
+    display: flex;
+    border: 0;
+    cursor: pointer;
+    height: 56px;
+    border-radius: 18px;
+    font-family: inherit;
+    font-size: 17px;
+    font-weight: 500;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    gap: 10px;
+}
+
+.main-panel .actions .primary-action{
+    background: #FFC83D;
+    color: #1B2559;
+}
+
+.main-panel .actions .secondary-action{
+    background: transparent;
+    border: 2px solid rgba(255,255,255,0.75);
+    color: #fff;
+}
+
+.photoPopupOverlay{
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+.photoPopup{
+    position: relative;
+    background-color: #4b5bff;
+    max-width: 400px;
+    max-height: 400px;
+    width: 100%;
+    height: 100%;
+    border-radius: 26px;
+    text-align: center;
+}
+
+.photoPopupOverlay.show{
+    display: flex;
+}
+
+#imageInput{
+    font-family: "Fredoka";
+    background-color: transparent;
+    border: #1B2559, solid, 3px;
+    border-radius: 9999px;
+    padding: 10px;
+    margin: 10px;
+}
+
+.photoPopupOverlay .photoPopup button{
+    font-family: "Fredoka";
+    background-color: transparent;
+    border: #1B2559, solid, 3px;
+    border-radius: 14px;
+    padding: 10px;
+    margin: 10px;
+    max-width: fit-content;
+    max-height: fit-content;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+}
+
+#closeImageButton{
+    padding: 5px;
+    max-width: 40px;
+}
+
+#submitImageButton{
+    position: absolute;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    margin: 20px;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+#primaryTextInput{
+    font-family: "Nunito";
+    max-height: 400px;
+    width: 80%;
+    min-height: 120px;
+    max-width: 350px;
+    max-height: 250px;
+    padding: 12px;
+    font-size: 16px;
+    line-height: 1.5;
+    box-sizing: border-box;
+    resize: vertical;
+}
+
+.btn:hover, button:hover{
+    background: #3d84c2;
+}
