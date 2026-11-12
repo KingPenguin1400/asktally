@@ -1,0 +1,235 @@
+/* --- FREDOKA --- */
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/Fredoka/static/Fredoka-Medium.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/Fredoka/static/Fredoka-SemiBold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/Fredoka/static/Fredoka-Bold.ttf') format('truetype');
+}
+
+/* --- NUNITO --- */
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/Nunito/static/Nunito-SemiBold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./fonts/Nunito-Bold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('/fonts/Nunito/static/Nunito-ExtraBold.ttf') format('truetype');
+}
+
+body{
+    margin: 0;
+    font-family: "Fredoka";
+    background: #f0f5ff;
+    color: #1f2937;
+    line-height: 1.6;
+}
+
+#return-button{
+    /* position: absolute; */
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    max-width: fit-content;
+    max-height: fit-content;
+    width: 100%;
+    height: 100%;
+    padding: 4px;
+    margin: 2rem;
+    font-size: 1.5rem;
+}
+
+.progress-banner{
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    /* border: 1px solid #1f2937; */
+}
+
+.progress-text-div{
+    text-align: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+#progress-bar-container{
+    display: flex;
+    flex-direction: row;
+    max-width: 90%;
+    width: 100%;
+    height: 20px;
+    padding: 7px;
+    margin: 11px;
+    background-color: transparent;
+    border-radius: 13px;
+    overflow: hidden;
+}
+
+.progress-segment{
+    margin: 5px;
+    height: 100%;
+    background-color: #DCE4F7;
+    border-radius: 13px;
+    transition: width 0.4s ease;
+}
+
+#progress-fill{
+    height: 100%;
+    background-color: #4B5BFF;
+    border-radius: 13px;
+    transition: width 0.4s ease;
+}
+
+h2{
+    padding: 3px;
+    margin: 13px;
+    margin-left: 40px;
+}
+
+.chatbox{
+    margin: 15px;
+}
+
+.chatbox b, .chatbox strong{
+    font-weight: 600;
+}
+
+.chatbox h3{
+    font-weight: 600;
+}
+
+.chatbox div{
+    background-color: #2d96fb;
+    color: white;
+    border-radius: 22px;
+    padding: 30px;
+    margin: 20px;
+}
+
+.initial-prompt-panel{
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin: 20px;
+    gap: 12px;
+}
+
+#originalQuestionBox{
+    display: flex;
+    flex-direction: column;
+    background-color: #2d96fb;
+    box-sizing: border-box;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    color: white;
+    border-radius: 22px;
+    padding: 30px;
+    margin: 20px;
+    width: fit-content;
+}
+
+hr{
+    border: none;
+}
+
+#tutorChatBox{
+    overflow-y: auto;
+    line-height: 1.6;
+    font-size: 16px;
+    text-align: left;
+    padding: 10px;
+}
+
+#tutorChatBox h3{
+    margin-top: 20px;
+}
+
+#tutorChatBox ul, #tutorChatBox ol{
+    padding-left: 20px;
+    margin-bottom: 15px;
+}
+
+#tutorChatBox li{
+    margin-bottom: 8px;
+}
+
+.input-area{
+    display: flex;
+    flex-direction: row;
+    gap: 11px;
+    font-family: "Fredoka";
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    width: 90%;
+    padding: 20px;
+}
+
+.submit-btn{
+    margin: 3px;
+    border: #1f2937, 4px, solid;
+    border-radius: 13px;
+    background-color: #f0f5ff;
+    padding: 12px;
+    cursor: pointer;
+    transition: background-color 0.4s ease, transform 0.1s ease;
+}
+
+.submit-btn:hover {
+    background-color: #c2c6ce;
+    transform: scale(1.1);
+}
+
+.submit-btn:active{
+    transform: scale(0.9);
+}
+
+#chatInput{
+    font-family: "Fredoka";
+    font-size: 16px;
+    font-weight: 600;
+    align-items: center;
+    justify-content: center;
+    width: 70%;
+    height: 19px;
+    padding: 10px;
+    border: #1f2937 5px solid;
+    border-radius: 13px;
+    background-color: transparent;
+
+    resize: none;
+    outline: none;
+}

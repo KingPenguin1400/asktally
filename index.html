@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
+    <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Math Tutor</title>
+    <title>Tally</title>
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
     <link rel="stylesheet" href="style.css"/>
@@ -54,11 +54,25 @@
                     <input id="imageInput" type="file" accept="image/jpeg,image/png,image/webp" maxlength="1"/>
                     <button id="closeImageButton">&times;</button>
                     <br>
-                    <label for="Please Enter"></label>
                     <textarea id="primaryTextInput" placeholder="What are you stuck on? Ask about your photo? Ask me anything about this problem..." rows="20" cols="30"></textarea>
                     <!--<input id="primaryTextInput" type="text" placeholder="What are you stuck on? Ask me anything about this problem...">-->
                     <br>
                     <button id="submitImageButton">Ask Tally</button>
+                    <br>
+                    <p id="primary-output">Enter your question above and click "Ask Tally".</p>
+                </div>
+            </div>
+
+            <div class="textPopupOverlay">
+                <div class="textPopup">
+                    <button id="closeTextButton">&times;</button>
+                    <br>
+                    <textarea id="secondaryTextInput" placeholder="What are you stuck on? Ask about your photo? Ask me anything about this problem..." rows="20" cols="30"></textarea>
+                    <!--<input id="secondaryTextInput" type="text" placeholder="What are you stuck on? Ask me anything about this problem...">-->
+                    <br>
+                    <button id="submitTextButton">Ask Tally</button>
+                    <br>
+                    <p id="secondary-output">Enter your question above and click "Ask Tally".</p>
                 </div>
             </div>
 

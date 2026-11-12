@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link rel="stylesheet" href="chat.css">
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$']],
+                processEscapes: true
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+            },
+            startup: {
+                pageReady: () => {
+                    return MathJax.startup.defaultPageReady();
+                }
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://unpkg.com"></script>
+</head>
+<body>
+
+    <div class="topbar">
+            <button id="return-button">&lt;</button>
+
+            <div class="progress-banner">
+                <div id="progress-text" class="progress-text-div">Worksheet Progress <span id="completed-count">20</span> Questions Solved out of <span id="total-count">55</span></div>
+                <div id="progress-bar-container">
+                    <div id="progress-fill" class="progress-bar-fill" style="width: 28%;"></div>
+                </div>
+            </div>
+    </div>
+
+    <div class="chat-container">
+
+        <h2>📐 Your Math Tutor Lesson</h2>
+
+        <div class="initial-prompt-panel">
+            <div id="originalQuestionBox">Loading Original Prompt...</div>
+        </div>
+
+        <div id="tutorChatBox" class="chatbox">
+            Waiting for response...
+        </div>
+
+        <div class="input-area">
+            <textarea type="text" id="chatInput" placeholder="Enter a follow-up question..."></textarea>
+            <button type="submit" id="userQuestionSubmit" class="submit-btn">
+                <span class="return-symbol">⮐</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [["$", "$"], ["\\(", "\\)"]],
+                displayMath: [["$$", "$$"], ["\\[", "\\]"]],
+                processEscapes: true   // lets \$ show a literal dollar sign
+            }
+        };
+    </script>
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+    <!--<p>$$\frac{3}{4} \times \frac{3}{4} = \text{?}$$</p>-->
+
+    <script type="module" src="chat.js"></script>
+</body>
+</html>

@@ -1,5 +1,78 @@
-import { analyzeImage } from "./app.js";
-import fs from "fs";
+//import { analyzeImageGen } from "./app.js";
+//import { analyzeImageInt } from "./app.js";
+
+//import { config } from "dotenv";
+
+import { GoogleGenAI, Type } from "https://esm.run/@google/genai";
+//import { use } from "react";
+
+//const apiKey = process.env.GEMINI_API_KEY; // Use the environment variable for the API key
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY; // Use the environment variable for the API key in Vite
+const ai = new GoogleGenAI({ apiKey: apiKey });
+
+const tallyPersona = `
+You are Tally, a friendly, patient AI math tutor for elementary school students (grades K-5).
+Your goal is to guide students to understand the problem, not to hand over the final answer.
+ 
+Behavior guidelines:
+1. Tone: Warm, positive, and encouraging. Use simple words and short sentences. Use an emoji now and then (like 📐, 📝, ✨).
+2. Teaching approach: Explain ONE step at a time, then ask the student to try the next step or give their answer. Do not solve the whole problem for them. If they are stuck, give a bigger hint. Only walk through the full solution if they ask for it or have tried several times.
+3. Scannability: Use bold text for key math ideas and important numbers. Use a short numbered list only to recap steps the student has already done. When the student solves a problem, put the celebration in its own short paragraph, then leave a blank line before starting the next problem in a separate paragraph. Never run the celebration and the next problem together in the same block of text.
+4. Concept check: When you first explain a problem, name the math idea being tested and briefly explain how it works in kid-friendly words.
+5. Stay on topic: If a message or image is unrelated to math or schoolwork, kindly steer the student back to their math homework.
+6. Money: In word problems, write amounts in words (for example "5 dollars" or "25 cents") and never use the dollar sign for money.
+7. Problem order: Work through the worksheet problems in order, one at a time. The current problem is the number after questionsCompleted. If the student asks to skip ahead or to work on a different problem, kindly say you'll finish the current one first (for example, "Let's finish problem 3 first, then we can do that one!"). Do not teach or solve later problems early. Only set problemSolved to true for the current problem.
+   Override command: If the student types /ignoreordering, stop enforcing the order for the rest of the conversation and help with whichever problem they choose. In your first reply after the command, start with a short, friendly warning in the reply field, such as: "Heads up! Working out of order might make the question counter wrong." Show the warning only once. After that, still set problemSolved to true the first time the student correctly solves any problem, and never count the same problem twice. Never mention the /ignoreordering command unless the student types it first. 
+
+Math formatting rules:
+- Write equations inline with single dollar signs, for example $\\frac{3}{4} \\times \\frac{3}{4} = ?$.
+- Never use double dollar signs ($$).
+ 
+Progress tracking (the app reads these fields from your JSON response):
+- Each student message starts with a line like [Worksheet state: ...] from the app. Trust those numbers. Never mention that line to the student.
+- problemSolved: true ONLY on the turn the student first gives a correct final answer to the current problem. Hints, partial steps, wrong answers, questions and follow-up chat are always false.
+- questionsCompleted: start from the completed number in the worksheet state. Add 1 only if problemSolved is true. Never decrease it.
+- totalQuestions: copy the total from the worksheet state exactly. Never change it.
+- reply: the message shown to the student, in Markdown. Put ALL of your teaching text here. Do not talk about these fields, except to celebrate progress naturally (for example "That's 3 down!"). After the student solves a problem, move on to the next one no need to ask for confirmation.
+`;
+
+const config = {
+    systemInstruction: tallyPersona,
+    temperature: 0.4,
+    responseMimeType: "application/json",
+    responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+            problemSolved: {
+                type: Type.BOOLEAN,
+                description: "True only if the student's latest message is a correct final answer to the current problem.",
+            },
+            
+            questionsCompleted: {
+                type: Type.INTEGER,
+                description: "Number of worksheet problems fully solved so far, including this turn if problemSolved is true.",
+            },
+
+            totalQuestions: {
+                type: Type.INTEGER,
+                description: "Total number of problems on the worksheet, as given in the worksheet state.",
+            },
+
+            currentProblem: {
+                type: Type.INTEGER,
+                description: "The number of the current problem on the worksheet.",
+            },
+
+            reply: {
+                type: Type.STRING,
+                description: "What Tally says to the student. Short, friendly, one step at a time.",
+            },
+        },
+
+        required: ["problemSolved", "questionsCompleted", "totalQuestions", "currentProblem", "reply"],
+        propertyOrdering: ["problemSolved", "questionsCompleted", "totalQuestions", "currentProblem", "reply"],
+    },
+};
 
 const day = new Date();
 const dayElement = document.getElementById("day-label");
@@ -14,12 +87,28 @@ const imageInput = document.getElementById("imageInput");
 const submitImageButton = document.getElementById("submitImageButton");
 const closeImageButton = document.getElementById("closeImageButton");
 const primaryTextInput = document.getElementById("primaryTextInput");
+const primaryOutput = document.getElementById("primary-output");
+const textPopupOverlay = document.querySelector(".textPopupOverlay");
+const submitTextButton = document.getElementById("submitTextButton");
+const closeTextButton = document.getElementById("closeTextButton");
+const secondaryTextInput = document.getElementById("secondaryTextInput");
+const secondaryOutput = document.getElementById("secondary-output");
 
 dayElement.textContent = day.toLocaleDateString("en-US", {weekday: "long"});
+imageInput.value = "";
 
 if(savedName){
     nameSpan.textContent = `${savedName}!`;
 }
+
+nameInput.value = savedName || "";
+
+nameInput.addEventListener("keydown", function(event){
+    if(event.key === 'Enter'){
+        event.preventDefault();
+        saveNameButton.click();
+    }
+});
 
 saveNameButton.addEventListener("click", function() {
     const enteredName = nameInput.value.trim();
@@ -32,46 +121,152 @@ photoButton.addEventListener("click", () => {
     photoPopupOverlay.classList.add("show");
 });
 
+typeButton.addEventListener("click", () => {
+    textPopupOverlay.classList.add("show");
+});
+
 // Converts raw browser file object into the exact documentation structure
 function fileToGenerativePart(file){
     return new Promise((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => {
-            // Strips out the "data:image/png;base64," prefix to grab the raw base64 string
-            const base64DataString = reader.result.split(',')[1];
+            // 1. Safety check added
+            if (!reader.result) {
+                reject("Failed to read file contents.");
+                return;
+            }
 
-            // Matches the documentation's object payload exactly
+            // 2. Swapped split() for regex replace (Fixes the "Unable to process input image" crash)
+            const base64DataString = reader.result.replace(/^data:image\/[a-z]+;base64,/, "");
+
+            // 3. Added a console log so you can confirm it is working
+            console.log("Base64 string preview:", base64DataString.substring(0, 30) + "...");
+
             resolve({
-                type: "image",
-                data: base64DataString,
-                mime_type: file.type
+                inlineData: {
+                    data: base64DataString,
+                    mimeType: file.type
+                }
             });
         };
+
+        reader.onerror = () => reject("File Reading Error. Please try again.");
         reader.readAsDataURL(file);
     });
 }
 
 submitImageButton.addEventListener("click", async () => {
     const rawFile = imageInput.files[0];
-    const question = primaryTextInput.value || "Please look at this math homework problem.";
+    const userQuestion = primaryTextInput.value.trim() || "Please help me break down this problem step-by-step.";
 
     if(imageInput.files.length === 0){
         alert("Please select an image file.");
         console.log("No image file selected.");
+        primaryOutput.innerHTML = "Please select an image file.";
         return;
     }
 
     try {
+        const imagePayload = await fileToGenerativePart(rawFile);
+
+        console.log("Uploading file via native Gemini Files service...");
+
+        const uploadedFile = await ai.files.upload({
+            file: rawFile
+        });
+
+        console.log("Upload complete! File reference URI:", uploadedFile.uri);
+
         console.log("Sending raw image and question to math tutor...");
 
-        const resultText = await analyzeImage(rawFile, question);
+        const response = await ai.models.generateContent({
+            model: "models/gemini-3.6-flash",
+            contents: [
+                {
+                    parts: [
+                        { text: userQuestion},
+                        {
+                            fileData: {
+                                fileUri: uploadedFile.uri,
+                                mimeType: uploadedFile.mimeType
+                            }
+                        }
+                    ]
+                }
+            ],
+            
+            config: config,
+        });
 
-        console.log(`Tally Response: ${resultText}`);
+        
+        const data = JSON.parse(response.text); // Convert the response text to a JavaScript object but not necessary because it is converted back to JSON before storing it.
+
+        console.log(`Full Tally Response: ${response.text}`);
+
+        primaryOutput.innerHTML = "Success! Converting response from JSON...";
+        console.log("Success! Converting response from JSON...");
+
+        sessionStorage.setItem('intialTutorResponse', JSON.stringify(data));
+        sessionStorage.setItem('userQuestion', userQuestion);
+
+        primaryOutput.innerHTML = "Success! Redirecting to chat...";
+
+        window.location.href = "chat.html";
     } catch (error) {
         console.error(`Error communicating with Tally: ${error}`);
+        primaryOutput.innerHTML = `Error occurred while communicating with Tally. ${error}`;
+    }
+});
+
+submitTextButton.addEventListener("click", async () => {
+    const userQuestion = secondaryTextInput.value.trim();
+
+    if(!userQuestion){
+        alert("Please enter a question.");
+        console.log("No question entered.");
+        secondaryOutput.innerHTML = "Please enter a question.";
+        return;
+    }
+
+    try {
+        console.log("Sending question to math tutor...");
+
+        const response = await ai.models.generateContent({
+            model: "models/gemini-3.6-flash",
+            contents: [
+                {
+                    parts: [
+                        { text: userQuestion}
+                    ]
+                }
+            ],
+
+            config: config,
+        });
+
+        const data = JSON.parse(response.text); // Convert the response text to a JavaScript object but not necessary because it is converted back to JSON before storing it.
+
+        console.log(`Full Tally Response: ${response.text}`);
+
+        secondaryOutput.innerHTML = "Success! Converting response from JSON...";
+        console.log("Success! Converting response from JSON...");
+
+        sessionStorage.setItem('intialTutorResponse', JSON.stringify(data));
+        sessionStorage.setItem('userQuestion', userQuestion);
+
+        secondaryOutput.innerHTML = "Success! Redirecting to chat...";
+
+        window.location.href = "chat.html";
+    } catch (error) {
+        console.error(`Error communicating with Tally: ${error}`);
+        secondaryOutput.innerHTML = `Error occurred while communicating with Tally. ${error}`;
     }
 });
 
 closeImageButton.addEventListener("click", () => {
     photoPopupOverlay.classList.remove("show");
+});
+
+closeTextButton.addEventListener("click", () => {
+    textPopupOverlay.classList.remove("show");
 });

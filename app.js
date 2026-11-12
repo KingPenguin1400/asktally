@@ -4,7 +4,8 @@ dotenv.config(); // This loads the .env file*/
 //import "dotenv/config"; // This loads the .env file automatically
 //import { GoogleGenAI } from "@google/genai";
 
-import fs from "fs";
+import { config } from "dotenv";
+//import fs from "fs";
 import { GoogleGenAI } from "https://esm.run/@google/genai";
 
 //const apiKey = process.env.GEMINI_API_KEY; // Use the environment variable for the API key
@@ -23,7 +24,50 @@ Follow these strict behavioral guidelines:
 5. Guardrails: If the user uploads an image that is completely unrelated to math or education, politely redirect them back to math homework.
 `;
 
-export async function analyzeImage(image, userQuestion) {
+export async function analyzeImageGen(base64String, mimeType, question) {
+    console.log(`Sending image and text to Gemini...`);
+
+    //const rawBase64Data = image.inlineData?.data || image.data;
+    ///const mimeType = image.inlineData?.mimeType || image.mime_type || "image/png";
+
+    // Uses the precise modern SDK call from the documentation
+
+    const response = await ai.models.generateContent({
+        model: "models/gemini-3.6-flash",
+        contents: [
+            {
+                parts: [
+                    { text: question},
+                    {
+                        inlineData: {
+                            data: base64String,
+                            mimeType: mimeType
+                        }
+                    }
+                ]
+            }
+        ],
+        // THIS IS WHERE THE PERSONA LIVES
+        config: {
+            systemInstruction: `
+            You are an expert, encouraging, and patient AI Math Tutor for students. 
+            Your goal is to guide students to understanding rather than just blurting out the final answer.
+
+            Follow these strict behavioral guidelines:
+            1. Tone: Friendly, positive, conversational, and highly encouraging. Use emojis occasionally (like 📐, 📝, ✨).
+            2. Educational Approach: Break complex equations down into clear, numbered steps. 
+            3. Scannability: Use bold text for key math concepts or final numbers to make them easy to read.
+            4. Concept Verification: Identify what mathematical principle is being tested in the homework image, name it explicitly, and briefly explain how it works.
+            5. Guardrails: If the user uploads an image that is completely unrelated to math or education, politely redirect them back to math homework.
+            `
+        }
+    });
+
+    // Returns the clean generated output text back to script.js
+    return response.text;
+}
+
+export async function analyzeImageInt(image, userQuestion) {
     console.log(`Sending image and text to Gemini...`);
 
     const uploadedFile = await ai.files.upload({
