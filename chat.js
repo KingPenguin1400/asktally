@@ -130,7 +130,7 @@ function updateProgressUI(data) {
     if(!totalEl) return;
     if(!fillEl) return;
     
-    completedEl.textContent = data.questionsCompleted;
+    completedEl.textContent = data.questionsCompleted + 1;
     totalEl.textContent = data.totalQuestions;
 
     progressBarContainer.innerHTML = "";
