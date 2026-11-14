@@ -111,9 +111,15 @@ const chatbox = document.getElementById("tutorChatBox");
 
 const savedResponse = sessionStorage.getItem('intialTutorResponse');
 const originalQuestion = sessionStorage.getItem('userQuestion');
+const originalImage = sessionStorage.getItem('userImage');
 
 let savedResponseData = null;
 try { savedResponseData = JSON.parse(savedResponse); } catch (e) { console.warn(e); }
+
+/*let originalImageData = null;
+try { originalImageData = JSON.parse(originalImage); } catch (e) { console.warn(e); }*/
+
+const originalImageData = JSON.parse(originalImage);
 
 const originalQuestionBox = document.getElementById('originalQuestionBox');
 const chatInput = document.getElementById('chatInput');
@@ -178,7 +184,8 @@ function appendMessageToUI(sender, data){
         messageBubble.style.flexDirection = "column";
         messageBubble.style.margin = "20px";
         messageBubble.style.borderRadius = "22px";
-        messageBubble.style.backgroundColor = "#2d96fb";
+        //messageBubble.style.backgroundColor = "#2d96fb";
+        messageBubble.style.backgroundColor = "#4B5BFF";
         messageBubble.style.color = "white";
         userMessageParent.appendChild(messageBubble);
         chatbox.appendChild(userMessageParent);
@@ -198,20 +205,51 @@ function appendMessageToUI(sender, data){
 
 document.addEventListener("DOMContentLoaded", () => {
     if(savedResponse){
-        chatSession = ai.chats.create({
-            model: "models/gemini-3.6-flash",
-            history: [
-                {
-                    role: "user",
-                    parts: [{ text: originalQuestion }]
-                },
-                {
-                    role: "model",
-                    parts: [{ text: savedResponse }]
-                }
-            ],
-            config: config,
-        });
+        if(originalImageData){
+            console.log("Original image data available:", originalImageData);
+
+            chatSession = ai.chats.create({
+                model: "models/gemini-3.6-flash",
+                history: [
+                    {
+                        role: "user",
+                        parts: 
+                    [
+                        {
+                            fileData: {
+                                fileUri: originalImageData.uri,
+                                mimeType: originalImageData.mimeType,
+                            },
+                        },
+                        { text: originalQuestion },
+                    ],
+                    },
+                    {
+                        role: "model",
+                        parts: [{ text: savedResponse }]
+                    },
+                ],
+                config: config,
+            });
+        } else {
+            chatSession = ai.chats.create({
+                model: "models/gemini-3.6-flash",
+                history: [
+                    {
+                        role: "user",
+                        parts: 
+                    [
+                        { text: originalQuestion },
+                    ],
+                    },
+                    {
+                        role: "model",
+                        parts: [{ text: savedResponse }]
+                    },
+                ],
+                config: config,
+            });
+        }
 
         chatbox.innerHTML = '';
         originalQuestionBox.innerHTML = marked.parse(originalQuestion);

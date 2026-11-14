@@ -155,7 +155,9 @@ function fileToGenerativePart(file){
     });
 }
 
-submitImageButton.addEventListener("click", async () => {
+submitImageButton.addEventListener("click", async (e) => {
+    e.preventDefault();
+
     const rawFile = imageInput.files[0];
     const userQuestion = primaryTextInput.value.trim() || "Please help me break down this problem step-by-step.";
 
@@ -177,7 +179,7 @@ submitImageButton.addEventListener("click", async () => {
 
         console.log("Upload complete! File reference URI:", uploadedFile.uri);
 
-        console.log("Sending raw image and question to math tutor...");
+        console.log("Sending image and question to math tutor...");
 
         const response = await ai.models.generateContent({
             model: "models/gemini-3.6-flash",
@@ -205,20 +207,40 @@ submitImageButton.addEventListener("click", async () => {
 
         primaryOutput.innerHTML = "Success! Converting response from JSON...";
         console.log("Success! Converting response from JSON...");
-
-        sessionStorage.setItem('intialTutorResponse', JSON.stringify(data));
+        
         sessionStorage.setItem('userQuestion', userQuestion);
+        console.log(`Success! Stored question: ${sessionStorage.getItem('userQuestion')}`);
+        sessionStorage.setItem('intialTutorResponse', JSON.stringify(data));
+        console.log(`Success! Stored response: ${sessionStorage.getItem('intialTutorResponse')}`);
+        
+        console.log("Success! Stored question and response...");
+        primaryOutput.innerHTML = "Success! Stored question and response...";
+        console.log(`Attempting to store image...`);
+        primaryOutput.innerHTML = "Attempting to store image...";
+
+        try {
+            console.log(`Success! Storing image...`);
+            primaryOutput.innerHTML = "Success! Storing image...";
+            sessionStorage.setItem('userImage', JSON.stringify(uploadedFile));
+            console.log(`Success! Stored image: ${uploadedFile}`);
+            primaryOutput.innerHTML = "Success! Stored image...";
+        } catch (error) {
+            console.error(`Error storing image: ${error}`);
+        }
 
         primaryOutput.innerHTML = "Success! Redirecting to chat...";
+        console.log("Success! Redirecting to chat...");
 
         window.location.href = "chat.html";
     } catch (error) {
-        console.error(`Error communicating with Tally: ${error}`);
+        console.error(`Error occurred while communicating with Tally: ${error}`);
         primaryOutput.innerHTML = `Error occurred while communicating with Tally. ${error}`;
     }
 });
 
-submitTextButton.addEventListener("click", async () => {
+submitTextButton.addEventListener("click", async (e) => {
+    e.preventDefault();
+
     const userQuestion = secondaryTextInput.value.trim();
 
     if(!userQuestion){
@@ -253,6 +275,9 @@ submitTextButton.addEventListener("click", async () => {
 
         sessionStorage.setItem('intialTutorResponse', JSON.stringify(data));
         sessionStorage.setItem('userQuestion', userQuestion);
+
+        console.log("Success! Stored question and response...");
+        secondaryOutput.innerHTML = "Success! Stored question and response...";
 
         secondaryOutput.innerHTML = "Success! Redirecting to chat...";
 

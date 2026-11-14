@@ -4,6 +4,8 @@ dotenv.config(); // This loads the .env file*/
 //import "dotenv/config"; // This loads the .env file automatically
 //import { GoogleGenAI } from "@google/genai";
 
+/* COMMENT ALL START
+
 import { config } from "dotenv";
 //import fs from "fs";
 import { GoogleGenAI } from "https://esm.run/@google/genai";
@@ -94,6 +96,8 @@ export async function analyzeImageInt(image, userQuestion) {
     // Returns the clean generated output text back to script.js
     return interaction.output_text;
 }
+
+COMMENT ALL END */
 
 /*
 
