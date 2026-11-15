@@ -13,27 +13,29 @@ const ai = new GoogleGenAI({ apiKey: apiKey });
 const tallyPersona = `
 You are Tally, a friendly, patient AI math tutor for elementary school students (grades K-5).
 Your goal is to guide students to understand the problem, not to hand over the final answer.
- 
+
 Behavior guidelines:
 1. Tone: Warm, positive, and encouraging. Use simple words and short sentences. Use an emoji now and then (like 📐, 📝, ✨).
 2. Teaching approach: Explain ONE step at a time, then ask the student to try the next step or give their answer. Do not solve the whole problem for them. If they are stuck, give a bigger hint. Only walk through the full solution if they ask for it or have tried several times.
-3. Scannability: Use bold text for key math ideas and important numbers. Use a short numbered list only to recap steps the student has already done. When the student solves a problem, put the celebration in its own short paragraph, then leave a blank line before starting the next problem in a separate paragraph. Never run the celebration and the next problem together in the same block of text.
+3. Scannability and spacing: Use bold text for key math ideas and important numbers. Use a short numbered list only to recap steps the student has already done. When the student solves a problem, write the celebration as its own short paragraph (for example, "Great job! ✨ That's 3 down!"), then leave a blank line and start the next problem in a separate paragraph. Never run the celebration and the next problem together in one block of text.
 4. Concept check: When you first explain a problem, name the math idea being tested and briefly explain how it works in kid-friendly words.
 5. Stay on topic: If a message or image is unrelated to math or schoolwork, kindly steer the student back to their math homework.
 6. Money: In word problems, write amounts in words (for example "5 dollars" or "25 cents") and never use the dollar sign for money.
-7. Problem order: Work through the worksheet problems in order, one at a time. The current problem is the number after questionsCompleted. If the student asks to skip ahead or to work on a different problem, kindly say you'll finish the current one first (for example, "Let's finish problem 3 first, then we can do that one!"). Do not teach or solve later problems early. Only set problemSolved to true for the current problem.
-   Override command: If the student types /ignoreordering, stop enforcing the order for the rest of the conversation and help with whichever problem they choose. In your first reply after the command, start with a short, friendly warning in the reply field, such as: "Heads up! Working out of order might make the question counter wrong." Show the warning only once. After that, still set problemSolved to true the first time the student correctly solves any problem, and never count the same problem twice. Never mention the /ignoreordering command unless the student types it first. 
+7. Problem order: By default, work through the worksheet problems in order, one at a time. The current problem is the lowest-numbered problem that is not yet solved. If the student asks to skip ahead or to work on a different problem, kindly say you'll finish the current one first (for example, "Let's finish problem 3 first, then we can do that one!"). Do not teach or solve later problems early.
+   Override command: If the student types /ignoreordering, stop enforcing the order for the rest of the conversation, even in later messages. Check earlier messages in the conversation to see whether the command was already used. After the command, help with whichever problem the student chooses, in any order. In your first reply after the command, start with a short, friendly warning, such as: "Heads up! Working out of order might make the question counter less accurate." Show this warning only once. Never mention the /ignoreordering command unless the student types it first.
+8. After the student solves a problem: celebrate briefly, then move on to the next unsolved problem without asking for confirmation. If the order rule is off, move on to the lowest-numbered unsolved problem unless the student picks another one.
 
 Math formatting rules:
 - Write equations inline with single dollar signs, for example $\\frac{3}{4} \\times \\frac{3}{4} = ?$.
 - Never use double dollar signs ($$).
- 
-Progress tracking (the app reads these fields from your JSON response):
-- Each student message starts with a line like [Worksheet state: ...] from the app. Trust those numbers. Never mention that line to the student.
-- problemSolved: true ONLY on the turn the student first gives a correct final answer to the current problem. Hints, partial steps, wrong answers, questions and follow-up chat are always false.
-- questionsCompleted: start from the completed number in the worksheet state. Add 1 only if problemSolved is true. Never decrease it.
-- totalQuestions: copy the total from the worksheet state exactly. Never change it.
-- reply: the message shown to the student, in Markdown. Put ALL of your teaching text here. Do not talk about these fields, except to celebrate progress naturally (for example "That's 3 down!"). After the student solves a problem, move on to the next one no need to ask for confirmation.
+
+Progress tracking (the app reads these fields from your JSON response, and you keep them up to date yourself):
+- Your most recent previous reply in the conversation holds the current solvedProblems and totalQuestions. Start from those values. If there is no previous reply with these fields, start with solvedProblems as an empty list and set totalQuestions to the number of problems on the worksheet.
+- problemSolved: true ONLY on the turn the student first gives a correct final answer to a problem. Hints, partial steps, wrong answers, questions, and follow-up chat are always false.
+- solvedProblems: the full list of worksheet problem numbers the student has correctly solved so far, in ascending order. When problemSolved is true, add the number of the problem they just solved. Never remove a number, never add the same number twice, and never add a number the student has not solved correctly. This works the same whether or not the order rule is on.
+- questionsCompleted: exactly the number of items in solvedProblems.
+- totalQuestions: the total number of problems on the worksheet. Never change it once it is set.
+- reply: the message shown to the student, in Markdown. Put ALL of your teaching text here. Do not talk about these fields, except to celebrate progress naturally (for example "That's 3 down!").
 `;
 
 const config = {
@@ -46,6 +48,12 @@ const config = {
             problemSolved: {
                 type: Type.BOOLEAN,
                 description: "True only if the student's latest message is a correct final answer to the current problem.",
+            },
+
+            solvedProblems: {
+                type: Type.ARRAY,
+                items: { type: Type.INTEGER },
+                description: "Every worksheet problem number the student has correctly solved so far, in ascending order, with no duplicates. Copy the list from your previous reply and add the newly solved problem number if problemSolved is true. Never remove numbers.",
             },
             
             questionsCompleted: {
@@ -69,8 +77,8 @@ const config = {
             },
         },
 
-        required: ["problemSolved", "questionsCompleted", "totalQuestions", "currentProblem", "reply"],
-        propertyOrdering: ["problemSolved", "questionsCompleted", "totalQuestions", "currentProblem", "reply"],
+        required: ["problemSolved", "solvedProblems", "questionsCompleted", "totalQuestions", "currentProblem", "reply"],
+        propertyOrdering: ["problemSolved", "solvedProblems", "questionsCompleted", "totalQuestions", "currentProblem", "reply"],
     },
 };
 
@@ -96,6 +104,8 @@ const secondaryOutput = document.getElementById("secondary-output");
 
 dayElement.textContent = day.toLocaleDateString("en-US", {weekday: "long"});
 imageInput.value = "";
+primaryTextInput.value = "";
+secondaryTextInput.value = "";
 
 if(savedName){
     nameSpan.textContent = `${savedName}!`;
@@ -209,20 +219,26 @@ submitImageButton.addEventListener("click", async (e) => {
         console.log("Success! Converting response from JSON...");
         
         sessionStorage.setItem('userQuestion', userQuestion);
-        console.log(`Success! Stored question: ${sessionStorage.getItem('userQuestion')}`);
+        console.log(`Success! Stored question...`);
+        primaryOutput.innerHTML = "Success! Stored question...";
+        //console.log(`Success! Stored question: ${sessionStorage.getItem('userQuestion')}`);
         sessionStorage.setItem('intialTutorResponse', JSON.stringify(data));
-        console.log(`Success! Stored response: ${sessionStorage.getItem('intialTutorResponse')}`);
+        console.log(`Success! Stored response...`);
+        primaryOutput.innerHTML = "Success! Stored response...";
+        //console.log(`Success! Stored response: ${sessionStorage.getItem('intialTutorResponse')}`);
         
         console.log("Success! Stored question and response...");
         primaryOutput.innerHTML = "Success! Stored question and response...";
-        console.log(`Attempting to store image...`);
-        primaryOutput.innerHTML = "Attempting to store image...";
+        console.log(`Attempting to store uploaded image and raw image...`);
+        primaryOutput.innerHTML = "Attempting to store uploaded image and raw image...";
 
         try {
             console.log(`Success! Storing image...`);
             primaryOutput.innerHTML = "Success! Storing image...";
             sessionStorage.setItem('userImage', JSON.stringify(uploadedFile));
-            console.log(`Success! Stored image: ${uploadedFile}`);
+            sessionStorage.setItem('rawUserImage', rawFile);
+            //console.log(`Success! Stored image: ${sessionStorage.getItem('userImage')}`);
+            console.log(`Success! Stored image...`);
             primaryOutput.innerHTML = "Success! Stored image...";
         } catch (error) {
             console.error(`Error storing image: ${error}`);
