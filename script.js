@@ -92,13 +92,21 @@ const config = {
 
 let chatSession = null;
 
-const day = new Date();
+const date = new Date();
 const dayElement = document.getElementById("day-label");
 
 let savedName = localStorage.getItem("userName");
 const nameSpan = document.getElementById("name-span");
 const nameInput = document.getElementById("name-input");
 const saveNameButton = document.getElementById("save-name-button");
+
+const today = new Date();
+const yesterday = new Date(today);
+yesterday.setDate(yesterday.getDate() - 1);
+
+const streakNum = document.getElementById("streakNum");
+const streak = localStorage.getItem('streak');
+const lastVisited = localStorage.getItem('lastVisited');
 
 const photoButton = document.getElementById("photo-button");
 const typeButton = document.getElementById("type-button");
@@ -116,7 +124,7 @@ const closeTextButton = document.getElementById("closeTextButton");
 const secondaryTextInput = document.getElementById("secondaryTextInput");
 const secondaryOutput = document.getElementById("secondary-output");
 
-dayElement.textContent = day.toLocaleDateString("en-US", {weekday: "long"});
+dayElement.textContent = date.toLocaleDateString("en-US", {weekday: "long"});
 imageInput.value = "";
 primaryTextInput.value = "";
 secondaryTextInput.value = "";
@@ -139,6 +147,23 @@ saveNameButton.addEventListener("click", function() {
     if (!enteredName) return;
     localStorage.setItem("userName", enteredName);
     nameSpan.textContent = `${enteredName}!`;
+});
+
+document.addEventListener("DOMContentLoaded", function(){
+    if(streak && lastVisited){
+        if(lastVisited == yesterday){
+            localStorage.setItem('streak', streak + 1)
+            streakNum.innerHTML = streak;
+            localStorage.setItem('lastVisited', today);
+        }else{
+            streakNum.innerHTML = streak;
+            localStorage.setItem('lastVisited', today);
+        }
+    }else{
+        localStorage.setItem('streak', 1);
+        streakNum.innerHTML = streak;
+        localStorage.setItem('lastVisited', date);
+    }
 });
 
 photoButton.addEventListener("click", () => {
