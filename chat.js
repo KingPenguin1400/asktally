@@ -1,8 +1,11 @@
 import { GoogleGenAI, Type } from 'https://esm.run/@google/genai';
 import { marked } from 'https://esm.run/marked';
 import DOMPurify from 'https://esm.run/dompurify';
+
 //import { use } from 'react';
 
+let STORAGE_KEY = 'tally_chit_chats';
+let title;
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY; // Use the environment variable for the API key in Vite
 const ai = new GoogleGenAI({ apiKey: apiKey });
 
@@ -20,6 +23,8 @@ Behavior guidelines:
 7. Problem order: By default, work through the worksheet problems in order, one at a time. The current problem is the lowest-numbered problem that is not yet solved. If the student asks to skip ahead or to work on a different problem, kindly say you'll finish the current one first (for example, "Let's finish problem 3 first, then we can do that one!"). Do not teach or solve later problems early.
    Override command: If the student types /ignoreordering, stop enforcing the order for the rest of the conversation, even in later messages. Check earlier messages in the conversation to see whether the command was already used. After the command, help with whichever problem the student chooses, in any order. In your first reply after the command, start with a short, friendly warning, such as: "Heads up! Working out of order might make the question counter less accurate." Show this warning only once. Never mention the /ignoreordering command unless the student types it first.
 8. After the student solves a problem: celebrate briefly, then move on to the next unsolved problem without asking for confirmation. If the order rule is off, move on to the lowest-numbered unsolved problem unless the student picks another one.
+
+- chatTitle: Name the homework in 2 to 5 words based on the math topic (for example "Multiplying by 3s" or "Adding fractions"). Keep it short and friendly, with no quotes, emojis, or ending punctuation.
 
 Math formatting rules:
 - Write equations inline with single dollar signs, for example $\\frac{3}{4} \\times \\frac{3}{4} = ?$.
@@ -41,6 +46,11 @@ const config = {
     responseSchema: {
         type: Type.OBJECT,
         properties: {
+            chatTitle: {
+                type: Type.STRING,
+                description: "A short, friendly name for this homework, 4 to 7 words and under 30 characters, like 'Multiplying by 3s' or 'Fraction word problems'. No quotes, no emojis, no ending punctuation.",
+            },
+            
             problemSolved: {
                 type: Type.BOOLEAN,
                 description: "True only if the student's latest message is a correct final answer to the current problem.",
@@ -73,8 +83,8 @@ const config = {
             },
         },
 
-        required: ["problemSolved", "solvedProblems", "questionsCompleted", "totalQuestions", "currentProblem", "reply"],
-        propertyOrdering: ["problemSolved", "solvedProblems", "questionsCompleted", "totalQuestions", "currentProblem", "reply"],
+        required: ["chatTitle", "problemSolved", "solvedProblems", "questionsCompleted", "totalQuestions", "currentProblem", "reply"],
+        propertyOrdering: ["chatTitle", "problemSolved", "solvedProblems", "questionsCompleted", "totalQuestions", "currentProblem", "reply"],
     },
 };
 
@@ -112,10 +122,44 @@ const mathExtension = {
 
 marked.use({ extensions: [mathExtension] });
 
-const renderMarkdown = (text) => DOMPurify.sanitize(marked.parse(text));
+const renderMarkdown = (text) => DOMPurify.sanitize(marked.parse(String(text ?? '')));
+
+function newChatId() { return crypto.randomUUID(); }
+
+function addItemToStorage(key, newItem){
+    const existingData = localStorage.getItem(key);
+    const itemsArray = existingData ? JSON.parse(existingData) : [];
+
+    itemsArray.push(newItem);
+
+    localStorage.setItem(key, itemsArray);
+}
+
+function loadChats(key){
+    try { return JSON.parse(localStorage.getItem(key)) || {}; }
+    catch { return {}; }
+}
+
+function saveChat(chat){
+    const chats = loadChats(STORAGE_KEY);
+    chats[chat.id] = { ...chats[chat.id], ...chat, updatedAt: Date.now()};
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(chats));
+    } catch (e) {
+        console.error(`Could not save chats (storage full?): ${e}`);
+    }
+}
+
+function deleteChat(id){
+    const chats = loadChats(STORAGE_KEY);
+    delete chats[id];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(chats));
+}
 
 let chatSession = null;
 const chatbox = document.getElementById("tutorChatBox");
+
+const chatTitleEl = document.getElementById("chatTitle");
 
 const savedResponse = sessionStorage.getItem('intialTutorResponse');
 const originalQuestion = sessionStorage.getItem('userQuestion');
@@ -174,7 +218,9 @@ function updateProgressUI(data) {
         }
     }
 
-    /*if(fillEl) {
+    /*
+    ANOTHER OLD WAY
+    if(fillEl) {
         const pct = (data.questionsCompleted / data.totalQuestions) * 100;
         fillEl.style.width = `${28}%`;
     }*/
@@ -182,7 +228,7 @@ function updateProgressUI(data) {
 
 function appendMessageToUI(sender, data){
     let messageBubble = document.createElement('div');
-
+    
     let cleantext = renderMarkdown(data.reply);
     
     if(sender === 'tutor'){
@@ -235,78 +281,84 @@ function displayOriginalImage(){
     console.log("Original image displayed.");
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    if(savedResponse){
-        originalQuestionBox.innerHTML = '';
-        if(originalImageData && rawOriginalImage){
-            console.log("Original image data and raw image available:");
-            //console.log("Original image data available:", originalImageData);
+function restoreChat(chat){
+    chatbox.innerHTML = '';
 
-            chatSession = ai.chats.create({
-                model: "models/gemini-3.6-flash",
-                history: [
-                    {
-                        role: "user",
-                        parts: 
-                    [
-                        {
-                            fileData: {
-                                fileUri: originalImageData.uri,
-                                mimeType: originalImageData.mimeType,
-                            },
-                        },
-                        { text: originalQuestion },
-                    ],
-                    },
-                    {
-                        role: "model",
-                        parts: [{ text: savedResponse }]
-                    },
-                ],
-                config: config,
-            });
-
-            console.log("Chat session created with original image data and raw image.");
-            
-            //displayOriginalImage();
-        } else {
-            console.log("Original image data or raw image not available:");
-            console.log("Using only the original question and response.");
-
-            chatSession = ai.chats.create({
-                model: "models/gemini-3.6-flash",
-                history: [
-                    {
-                        role: "user",
-                        parts: 
-                    [
-                        { text: originalQuestion },
-                    ],
-                    },
-                    {
-                        role: "model",
-                        parts: [{ text: savedResponse }]
-                    },
-                ],
-                config: config,
-            });
+    chat.history.forEach((entry) => {
+        //const text = entry.parts[0].text;/*\]
+        const text = entry.parts?.find((p) => typeof p.text === 'string')?.text;
+        if(!text) return;
+        if(entry.role === 'user'){
+            const clean = text.replace(/^\[Worksheet state:.*?\]\s*/s, '');
+            appendMessageToUI('user', { reply: clean });
+        }else{
+            let data;
+            try { data = JSON.parse(text); } catch { data = { reply: text }; }
+            if(typeof data.reply !== 'string') data = { ...data, reply: text };
+            appendMessageToUI('tutor', data);
         }
+    });
 
-        chatbox.innerHTML = '';
-        originalQuestionBox.innerHTML = originalQuestionBox.innerHTML + marked.parse(originalQuestion);
-        appendMessageToUI('tutor', savedResponseData);
+    const history = chat.history;
+    //const num = history.length - 1;
+    const dataforui = history[history.length].parts[0];
+    updateProgressUI(dataforui);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    originalQuestionBox.innerHTML = '';
+
+    const id = new URLSearchParams(window.location.search).get('id');
+    const chat = loadChats(STORAGE_KEY)[id];
+
+    console.log(typeof chat.history[1].parts[0].text)
+    const cleanHistory = chat.history.map((entry) => ({
+        role: entry.role,
+        parts: entry.parts.map((p) =>
+            typeof p.text === 'object' ? { text: JSON.stringify(p.text) } : p
+        ),
+    }));
+
+    chatbox.innerHTML = '';
+    //originalQuestionBox.innerHTML = originalQuestionBox.innerHTML + marked.parse(originalQuestion);
+    //appendMessageToUI('tutor', savedResponseData);
+
+    if(!chat){
+        console.log("Couldn't find that homework. Please go back and upload it again.");
+        chatbox.textContent = "Couldn't find that homework. Please go back and upload it again.";
     }else{
-        chatbox.innerText = "No homework response found. Please go back and upload an image!";
+        chatTitleEl.textContent = `📐 ${chat.title}`;
+
+        chatSession = ai.chats.create({
+            model: "models/gemini-3.6-flash",
+            history: cleanHistory,
+            config: config,
+        })
+
+        restoreChat(chat);
+    }
+
+    if(chatSession){
+        //STORAGE_KEY = chatSession[2][1][0].chatTitle; just didnt work ig
+        //STORAGE_KEY = chatSession.history[1].parts[0].chatTitle; lol why did I make this so complicated
+        //STORAGE_KEY = savedResponseData.chatTitle; it did work just wrong variable oops
+        //title = savedResponseData.chatTitle; // initally i set the variable to output an integer by accident lmao i was wondering why it outputted '1'
+        title = chat.title; //the other one was also wrong var again lol
+        //chatTitleEl.textContent = title;
+        //console.log(STORAGE_KEY); nope wrong var again
+        //console.log(title);
     }
 });
 
-async function handleStudentReply(){
-    const messageText = chatInput.value.trim();
+async function handleStudentReply(message){
+    const messageText = message.trim();
     const inputData = {"reply": messageText}; // Turn raw message input text into an object so it can be passed to appendMessageToUI
     if(!messageText || !chatSession) return;
 
     appendMessageToUI('user', inputData);
     chatInput.value = '';
+
+    const id = new URLSearchParams(window.location.search).get('id');
 
     const loadingBubble = document.createElement('div');
     loadingBubble.id = 'tutor-loading-indicator';
@@ -321,7 +373,17 @@ async function handleStudentReply(){
 
         loadingBubble.remove();
 
-        appendMessageToUI('tutor', JSON.parse(response.text));
+        const data = JSON.parse(response.text)
+        appendMessageToUI('tutor', data);
+
+        saveChat({
+            id,
+            history: chatSession.getHistory(),
+            solvedProblems: data.solvedProblems,
+            questionsCompleted: data.questionsCompleted,
+            totalQuestions: data.totalQuestions,
+            currentProblem: data.currentProblem,
+        });
     } catch (error) {
         console.error("Error sending chat reply message:", error);
         const loader = document.getElementById('tutor-loading-indicator');
@@ -339,6 +401,6 @@ chatInput.addEventListener('keydown', (event) => {
 
 userQuestionSubmit.addEventListener('click', (e) => {
     e.preventDefault();
-    handleStudentReply();
+    handleStudentReply(chatInput.value);
     console.log("Button Pressed!");
 });

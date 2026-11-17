@@ -7,6 +7,7 @@ import { GoogleGenAI, Type } from "https://esm.run/@google/genai";
 //import { use } from "react";
 
 //const apiKey = process.env.GEMINI_API_KEY; // Use the environment variable for the API key
+let STORAGE_KEY = 'tally_chit_chats';
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY; // Use the environment variable for the API key in Vite
 const ai = new GoogleGenAI({ apiKey: apiKey });
 
@@ -24,6 +25,8 @@ Behavior guidelines:
 7. Problem order: By default, work through the worksheet problems in order, one at a time. The current problem is the lowest-numbered problem that is not yet solved. If the student asks to skip ahead or to work on a different problem, kindly say you'll finish the current one first (for example, "Let's finish problem 3 first, then we can do that one!"). Do not teach or solve later problems early.
    Override command: If the student types /ignoreordering, stop enforcing the order for the rest of the conversation, even in later messages. Check earlier messages in the conversation to see whether the command was already used. After the command, help with whichever problem the student chooses, in any order. In your first reply after the command, start with a short, friendly warning, such as: "Heads up! Working out of order might make the question counter less accurate." Show this warning only once. Never mention the /ignoreordering command unless the student types it first.
 8. After the student solves a problem: celebrate briefly, then move on to the next unsolved problem without asking for confirmation. If the order rule is off, move on to the lowest-numbered unsolved problem unless the student picks another one.
+
+- chatTitle: Name the homework in 2 to 5 words based on the math topic (for example "Multiplying by 3s" or "Adding fractions"). Keep it short and friendly, with no quotes, emojis, or ending punctuation.
 
 Math formatting rules:
 - Write equations inline with single dollar signs, for example $\\frac{3}{4} \\times \\frac{3}{4} = ?$.
@@ -45,6 +48,11 @@ const config = {
     responseSchema: {
         type: Type.OBJECT,
         properties: {
+            chatTitle: {
+                type: Type.STRING,
+                description: "A short, friendly name for this homework, 4 to 7 words and under 30 characters, like 'Multiplying by 3s' or 'Fraction word problems'. No quotes, no emojis, no ending punctuation.",
+            },
+            
             problemSolved: {
                 type: Type.BOOLEAN,
                 description: "True only if the student's latest message is a correct final answer to the current problem.",
@@ -77,25 +85,31 @@ const config = {
             },
         },
 
-        required: ["problemSolved", "solvedProblems", "questionsCompleted", "totalQuestions", "currentProblem", "reply"],
-        propertyOrdering: ["problemSolved", "solvedProblems", "questionsCompleted", "totalQuestions", "currentProblem", "reply"],
+        required: ["chatTitle", "problemSolved", "solvedProblems", "questionsCompleted", "totalQuestions", "currentProblem", "reply"],
+        propertyOrdering: ["chatTitle", "problemSolved", "solvedProblems", "questionsCompleted", "totalQuestions", "currentProblem", "reply"],
     },
 };
 
+let chatSession = null;
+
 const day = new Date();
 const dayElement = document.getElementById("day-label");
+
 let savedName = localStorage.getItem("userName");
 const nameSpan = document.getElementById("name-span");
 const nameInput = document.getElementById("name-input");
 const saveNameButton = document.getElementById("save-name-button");
+
 const photoButton = document.getElementById("photo-button");
 const typeButton = document.getElementById("type-button");
+
 const photoPopupOverlay = document.querySelector(".photoPopupOverlay");
 const imageInput = document.getElementById("imageInput");
 const submitImageButton = document.getElementById("submitImageButton");
 const closeImageButton = document.getElementById("closeImageButton");
 const primaryTextInput = document.getElementById("primaryTextInput");
 const primaryOutput = document.getElementById("primary-output");
+
 const textPopupOverlay = document.querySelector(".textPopupOverlay");
 const submitTextButton = document.getElementById("submitTextButton");
 const closeTextButton = document.getElementById("closeTextButton");
@@ -165,6 +179,23 @@ function fileToGenerativePart(file){
     });
 }
 
+function loadChats(key){
+    try { return JSON.parse(localStorage.getItem(key)) || {}; }
+    catch { return {}; }
+}
+
+function saveChat(chat){
+    const chats = loadChats(STORAGE_KEY);
+    chats[chat.id] = { ...chats[chat.id], ...chat, updatedAt: Date.now()};
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(chats));
+    } catch (e) {
+        console.error(`Could not save chats (storage full?): ${e}`);
+    }
+}
+
+function newChatId() { return crypto.randomUUID(); }
+
 submitImageButton.addEventListener("click", async (e) => {
     e.preventDefault();
 
@@ -213,7 +244,7 @@ submitImageButton.addEventListener("click", async (e) => {
         
         const data = JSON.parse(response.text); // Convert the response text to a JavaScript object but not necessary because it is converted back to JSON before storing it.
 
-        console.log(`Full Tally Response: ${response.text}`);
+        console.log(`Full Tally Response: ${data}`);
 
         primaryOutput.innerHTML = "Success! Converting response from JSON...";
         console.log("Success! Converting response from JSON...");
@@ -247,7 +278,42 @@ submitImageButton.addEventListener("click", async (e) => {
         primaryOutput.innerHTML = "Success! Redirecting to chat...";
         console.log("Success! Redirecting to chat...");
 
-        window.location.href = "chat.html";
+        chatSession = ai.chats.create({
+            model: "models/gemini-3.6-flash",
+            history: [
+                {
+                    role: "user",
+                    parts: 
+                [
+                    {
+                        fileData: {
+                            fileUri: uploadedFile.uri,
+                            mimeType: uploadedFile.mimeType,
+                        },
+                    },
+                    { text: userQuestion },
+                ],
+                },
+                {
+                    role: "model",
+                    parts: [{ text: JSON.stringify(data) }]
+                },
+            ],
+            config: config,
+        });
+
+        const id = newChatId();
+        saveChat({
+            id,
+            title: data.chatTitle,
+            history: await chatSession.getHistory(),
+            solvedProblems: data.solvedProblems,
+            questionsCompleted: data.questionsCompleted,
+            totalQuestions: data.totalQuestions,
+            currentProblem: data.currentProblem,
+        });
+
+        window.location.href = `chat.html?id=${id}`;
     } catch (error) {
         console.error(`Error occurred while communicating with Tally: ${error}`);
         primaryOutput.innerHTML = `Error occurred while communicating with Tally. ${error}`;
@@ -297,7 +363,36 @@ submitTextButton.addEventListener("click", async (e) => {
 
         secondaryOutput.innerHTML = "Success! Redirecting to chat...";
 
-        window.location.href = "chat.html";
+        chatSession = ai.chats.create({
+            model: "models/gemini-3.6-flash",
+            history: [
+                {
+                    role: "user",
+                    parts: 
+                [
+                    { text: userQuestion },
+                ],
+                },
+                {
+                    role: "model",
+                    parts: [{ text: data }]
+                },
+            ],
+            config: config,
+        });
+
+        const id = newChatId();
+        saveChat({
+            id,
+            title: data.chatTitle,
+            history: await chatSession.getHistory(),
+            solvedProblems: data.solvedProblems,
+            questionsCompleted: data.questionsCompleted,
+            totalQuestions: data.totalQuestions,
+            currentProblem: data.currentProblem,
+        });
+
+        window.location.href = `chat.html?id=${id}`;
     } catch (error) {
         console.error(`Error communicating with Tally: ${error}`);
         secondaryOutput.innerHTML = `Error occurred while communicating with Tally. ${error}`;
