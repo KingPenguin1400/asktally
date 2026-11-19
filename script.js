@@ -27,7 +27,7 @@ Behavior guidelines:
 8. After the student solves a problem: celebrate briefly, then move on to the next unsolved problem without asking for confirmation. If the order rule is off, move on to the lowest-numbered unsolved problem unless the student picks another one.
 
 - chatTitle: Name the homework in 2 to 5 words based on the math topic (for example "Multiplying by 3s" or "Adding fractions"). Keep it short and friendly, with no quotes, emojis, or ending punctuation.
-- chatIcon: Pick exactly one icon from the allowed list that best matches the main math topic of the homework: ➕ addition, ➖ subtraction, ✖️ multiplication, ➗ division, ¾ fractions, 🔢 place value or counting, 📏 measurement, 🕒 time, 💰 money, 🔺 shapes and geometry, 📊 data and graphs, 🧩 word problems or patterns, ⭐ mixed topics or anything else. If the worksheet mixes topics, choose the one that appears most. Choose the icon once, in your first response, and never change it. Return only the single icon, with no extra text.
+- chatIcon: Pick exactly one icon from the allowed list that best matches the main math topic of the homework: ➕ addition, ➖ subtraction, ✖️ multiplication, ➗ division, ½ fractions, ± negative numbers and integers, 𝑥 algebra and equations with unknowns, 🔢 place value or counting, 📏 measurement, 🕒 time, 💰 money, 🔺 shapes and geometry, 📊 data and graphs, 🧩 word problems or patterns, ⭐ mixed topics or anything else. If the worksheet mixes topics, choose the one that appears most. Choose the icon once, in your first response, and never change it. Return only the single icon, with no extra text.
 
 Math formatting rules:
 - Write equations inline with single dollar signs, for example $\\frac{3}{4} \\times \\frac{3}{4} = ?$.
@@ -58,7 +58,7 @@ const config = {
             chatIcon: {
                 type: Type.STRING,
                 format: "enum",
-                enum: ["➕", "➖", "✖️", "➗", "¾", "🔢", "📏", "🕒", "💰", "🔺", "📊", "🧩", "⭐"],
+                enum: ["➕", "➖", "✖️", "➗", "½", "±", "𝑥", "🔢", "📏", "🕒", "💰", "🔺", "📊", "🧩", "⭐"],
                 description: "One icon from the list that best matches the main math topic of the homework. Chosen once and never changed.",
             },
             
@@ -410,7 +410,7 @@ submitImageButton.addEventListener("click", async (e) => {
         });
 
         const id = newChatId();
-        const ICONS =  ["➕", "➖", "✖️", "➗", "¾", "🔢", "📏", "🕒", "💰", "🔺", "📊", "🧩", "⭐"];
+        const ICONS = ["➕", "➖", "✖️", "➗", "½", "±", "𝑥", "🔢", "📏", "🕒", "💰", "🔺", "📊", "🧩", "⭐"];
         const chatIcon = ICONS.includes(data.chatIcon) ? data.chatIcon : "⭐";
 
         saveChat({
@@ -493,9 +493,13 @@ submitTextButton.addEventListener("click", async (e) => {
         });
 
         const id = newChatId();
+        const ICONS = ["➕", "➖", "✖️", "➗", "½", "±", "𝑥", "🔢", "📏", "🕒", "💰", "🔺", "📊", "🧩", "⭐"];
+        const chatIcon = ICONS.includes(data.chatIcon) ? data.chatIcon : "⭐";
+
         saveChat({
             id,
             title: data.chatTitle,
+            icon: chatIcon,
             history: await chatSession.getHistory(),
             solvedProblems: data.solvedProblems,
             questionsCompleted: data.questionsCompleted,
