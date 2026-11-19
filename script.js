@@ -27,6 +27,7 @@ Behavior guidelines:
 8. After the student solves a problem: celebrate briefly, then move on to the next unsolved problem without asking for confirmation. If the order rule is off, move on to the lowest-numbered unsolved problem unless the student picks another one.
 
 - chatTitle: Name the homework in 2 to 5 words based on the math topic (for example "Multiplying by 3s" or "Adding fractions"). Keep it short and friendly, with no quotes, emojis, or ending punctuation.
+- chatIcon: Pick exactly one icon from the allowed list that best matches the main math topic of the homework: ➕ addition, ➖ subtraction, ✖️ multiplication, ➗ division, ¾ fractions, 🔢 place value or counting, 📏 measurement, 🕒 time, 💰 money, 🔺 shapes and geometry, 📊 data and graphs, 🧩 word problems or patterns, ⭐ mixed topics or anything else. If the worksheet mixes topics, choose the one that appears most. Choose the icon once, in your first response, and never change it. Return only the single icon, with no extra text.
 
 Math formatting rules:
 - Write equations inline with single dollar signs, for example $\\frac{3}{4} \\times \\frac{3}{4} = ?$.
@@ -52,6 +53,13 @@ const config = {
             chatTitle: {
                 type: Type.STRING,
                 description: "A short, friendly name for this homework, 4 to 7 words and under 30 characters, like 'Multiplying by 3s' or 'Fraction word problems'. No quotes, no emojis, no ending punctuation.",
+            },
+
+            chatIcon: {
+                type: Type.STRING,
+                format: "enum",
+                enum: ["➕", "➖", "✖️", "➗", "¾", "🔢", "📏", "🕒", "💰", "🔺", "📊", "🧩", "⭐"],
+                description: "One icon from the list that best matches the main math topic of the homework. Chosen once and never changed.",
             },
             
             problemSolved: {
@@ -86,8 +94,8 @@ const config = {
             },
         },
 
-        required: ["chatTitle", "problemSolved", "solvedProblems", "questionsCompleted", "totalQuestions", "currentProblem", "reply"],
-        propertyOrdering: ["chatTitle", "problemSolved", "solvedProblems", "questionsCompleted", "totalQuestions", "currentProblem", "reply"],
+        required: ["chatTitle", "chatIcon", "problemSolved", "solvedProblems", "questionsCompleted", "totalQuestions", "currentProblem", "reply"],
+        propertyOrdering: ["chatTitle", "chatIcon", "problemSolved", "solvedProblems", "questionsCompleted", "totalQuestions", "currentProblem", "reply"],
     },
 };
 
@@ -176,8 +184,25 @@ function loadPreviousChats(){
     const topLevelKeys = Object.keys(dataObj);
     const length = topLevelKeys.length;
 
+    if(length == 0){
+        console.log("No homework found.");
+        homeworkSection.innerHTML = "<p>No homework found.</p>";
+        return;
+    }
+
+    console.log("ther is homewokr");
+
+    homeworkSection.innerHTML = "<h2>Today's homework</h2>";
+    
     for(let i = 0; i < length; i++){
         const homeworkItem = document.createElement('div');
+        const iconDiv = document.createElement('div');
+        iconDiv.className = "iconDiv";
+        const infoDiv = document.createElement('div');
+        infoDiv.className = "infoDiv";
+
+        homeworkItem.appendChild(iconDiv);
+        homeworkItem.appendChild(infoDiv);
 
         const chatId = topLevelKeys[i];
         const data = dataObj[chatId];
@@ -191,19 +216,24 @@ function loadPreviousChats(){
         homeworkItem.className = "homeworkItem";
         homeworkSection.appendChild(homeworkItem);
 
-        homeworkItem.innerHTML = chatId;
-        homeworkItem.innerHTML = `
+        infoDiv.innerHTML = chatId;
+        infoDiv.innerHTML = `
                 <p>${title}</p>
                 <div>Worksheet * <span>${questionsCompleted}</span> of <span>${totalQuestions}</span> done</div>
         `;
 
         const barContainer = document.createElement('div');
         barContainer.className = 'progress-bar-container';
-        homeworkItem.appendChild(barContainer);
+        infoDiv.appendChild(barContainer);
 
         const barFill = document.createElement('div');
         barFill.className = 'progress-fill';
         barContainer.appendChild(barFill);
+
+        const iconEl = document.createElement('div');
+        iconEl.className = 'chat-icon';
+        iconEl.innerHTML = data.icon || "⭐";
+        iconDiv.appendChild(iconEl);
 
         barFill.style = `width: ${questionsCompleted / totalQuestions * 100}%`;
 
@@ -380,9 +410,13 @@ submitImageButton.addEventListener("click", async (e) => {
         });
 
         const id = newChatId();
+        const ICONS =  ["➕", "➖", "✖️", "➗", "¾", "🔢", "📏", "🕒", "💰", "🔺", "📊", "🧩", "⭐"];
+        const chatIcon = ICONS.includes(data.chatIcon) ? data.chatIcon : "⭐";
+
         saveChat({
             id,
             title: data.chatTitle,
+            icon: chatIcon,
             history: await chatSession.getHistory(),
             solvedProblems: data.solvedProblems,
             questionsCompleted: data.questionsCompleted,
