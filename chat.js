@@ -235,17 +235,10 @@ function appendMessageToUI(sender, data){
     let messageBubble = document.createElement('div');
     
     let cleantext = renderMarkdown(data.reply);
-    //let cleantext = marked.parse(data.reply);
-
-    console.log(data.reply);
-    console.log(cleantext);
-    console.log(marked.parse(data.reply));
     
     if(sender === 'tutor'){
         messageBubble.innerHTML = `<strong>📐 Tutor:</strong> <br> ${cleantext}`;
         messageBubble.style = "width: fit-content";
-
-        //text:"{"chatTitle":"Multiplying Fractions","problemSolved":false,"solvedProblems":[],"questionsCompleted":0,"totalQuestions":12,"currentProblem":1,"reply":"Welcome! I'm Tally, and I'm excited to help you with your math! 📐\n\nWhen we **multiply fractions**, we multiply the top numbers (**numerators**) together, and then we multiply the bottom numbers (**denominators**) together! ✨\n\nLet's start with **problem 1**: $\\frac{3}{4} \\times \\frac{3}{4} = ?$\n\nFirst, let's look at the top numbers. What do you get when you multiply **$3 \\times 3$**?"}"
 
         chatbox.appendChild(messageBubble);
     }else{
