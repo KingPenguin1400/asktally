@@ -31,6 +31,7 @@ Behavior guidelines:
 Math formatting rules:
 - Write equations inline with single dollar signs, for example $\\frac{3}{4} \\times \\frac{3}{4} = ?$.
 - Never use double dollar signs ($$).
+- Also avoid using \n in your response just use Markdown line breaks (two spaces at the end of a line) to create new lines in your reply.
 
 Progress tracking (the app reads these fields from your JSON response, and you keep them up to date yourself):
 - Your most recent previous reply in the conversation holds the current solvedProblems and totalQuestions. Start from those values. If there is no previous reply with these fields, start with solvedProblems as an empty list and set totalQuestions to the number of problems on the worksheet.
@@ -124,6 +125,8 @@ const closeTextButton = document.getElementById("closeTextButton");
 const secondaryTextInput = document.getElementById("secondaryTextInput");
 const secondaryOutput = document.getElementById("secondary-output");
 
+const homeworkSection = document.getElementById("homeworkSection");
+
 dayElement.textContent = date.toLocaleDateString("en-US", {weekday: "long"});
 imageInput.value = "";
 primaryTextInput.value = "";
@@ -149,7 +152,7 @@ saveNameButton.addEventListener("click", function() {
     nameSpan.textContent = `${enteredName}!`;
 });
 
-document.addEventListener("DOMContentLoaded", function(){
+function loadStreak(){
     if(streak && lastVisited){
         if(lastVisited == yesterday){
             localStorage.setItem('streak', streak + 1)
@@ -164,6 +167,55 @@ document.addEventListener("DOMContentLoaded", function(){
         streakNum.innerHTML = streak;
         localStorage.setItem('lastVisited', date);
     }
+}
+
+function loadPreviousChats(){
+    const storedData = localStorage.getItem(STORAGE_KEY);
+    const dataObj = storedData ? JSON.parse(storedData) : {};
+
+    const topLevelKeys = Object.keys(dataObj);
+    const length = topLevelKeys.length;
+
+    for(let i = 0; i < length; i++){
+        const homeworkItem = document.createElement('div');
+
+        const chatId = topLevelKeys[i];
+        const data = dataObj[chatId];
+
+        const title = data.title;
+        const solvedProblems = data.solvedProblems;
+        const questionsCompleted = data.questionsCompleted;
+        const totalQuestions = data.totalQuestions
+        const currentProblem = data.currentProblem;
+
+        homeworkItem.className = "homeworkItem";
+        homeworkSection.appendChild(homeworkItem);
+
+        homeworkItem.innerHTML = chatId;
+        homeworkItem.innerHTML = `
+                <p>${title}</p>
+                <div>Worksheet * <span>${questionsCompleted}</span> of <span>${totalQuestions}</span> done</div>
+        `;
+
+        const barContainer = document.createElement('div');
+        barContainer.className = 'progress-bar-container';
+        homeworkItem.appendChild(barContainer);
+
+        const barFill = document.createElement('div');
+        barFill.className = 'progress-fill';
+        barContainer.appendChild(barFill);
+
+        barFill.style = `width: ${questionsCompleted / totalQuestions * 100}%`;
+
+        homeworkItem.addEventListener("click", () => {
+            window.location.href = `chat.html?id=${chatId}`;
+        });
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function(){
+    loadStreak()
+    loadPreviousChats()
 });
 
 photoButton.addEventListener("click", () => {

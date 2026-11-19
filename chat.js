@@ -29,6 +29,7 @@ Behavior guidelines:
 Math formatting rules:
 - Write equations inline with single dollar signs, for example $\\frac{3}{4} \\times \\frac{3}{4} = ?$.
 - Never use double dollar signs ($$).
+- Also avoid using \n in your response just use Markdown line breaks (two spaces at the end of a line) to create new lines in your reply.
 
 Progress tracking (the app reads these fields from your JSON response, and you keep them up to date yourself):
 - Your most recent previous reply in the conversation holds the current solvedProblems and totalQuestions. Start from those values. If there is no previous reply with these fields, start with solvedProblems as an empty list and set totalQuestions to the number of problems on the worksheet.
@@ -189,7 +190,11 @@ function updateProgressUI(data) {
     if(!totalEl) return;
     if(!fillEl) return;
     
-    completedEl.textContent = data.questionsCompleted + 1;
+    if(data.questionsCompleted !== data.totalQuestions){
+        completedEl.textContent = data.questionsCompleted + 1;
+    }else{
+        completedEl.textContent = data.questionsCompleted;
+    }
     totalEl.textContent = data.totalQuestions;
 
     progressBarContainer.innerHTML = "";
@@ -230,9 +235,17 @@ function appendMessageToUI(sender, data){
     let messageBubble = document.createElement('div');
     
     let cleantext = renderMarkdown(data.reply);
+    //let cleantext = marked.parse(data.reply);
+
+    console.log(data.reply);
+    console.log(cleantext);
+    console.log(marked.parse(data.reply));
     
     if(sender === 'tutor'){
         messageBubble.innerHTML = `<strong>📐 Tutor:</strong> <br> ${cleantext}`;
+        messageBubble.style = "width: fit-content";
+
+        //text:"{"chatTitle":"Multiplying Fractions","problemSolved":false,"solvedProblems":[],"questionsCompleted":0,"totalQuestions":12,"currentProblem":1,"reply":"Welcome! I'm Tally, and I'm excited to help you with your math! 📐\n\nWhen we **multiply fractions**, we multiply the top numbers (**numerators**) together, and then we multiply the bottom numbers (**denominators**) together! ✨\n\nLet's start with **problem 1**: $\\frac{3}{4} \\times \\frac{3}{4} = ?$\n\nFirst, let's look at the top numbers. What do you get when you multiply **$3 \\times 3$**?"}"
 
         chatbox.appendChild(messageBubble);
     }else{
@@ -283,6 +296,19 @@ function displayOriginalImage(){
 
 function restoreChat(chat){
     chatbox.innerHTML = '';
+    
+    /*const topLevelKeys = Object.keys(chat.history);
+    const length = topLevelKeys.length;
+    const lastObj = topLevelKeys[length - 1];
+    const parts = lastObj[0];
+    const data = parts[0];
+
+    console.log(topLevelKeys);
+    console.log(length);
+    console.log(lastObj);
+    console.log(parts);
+    console.log(data);
+    console.log(data.text);*/
 
     chat.history.forEach((entry) => {
         //const text = entry.parts[0].text;/*\]
@@ -296,13 +322,9 @@ function restoreChat(chat){
             try { data = JSON.parse(text); } catch { data = { reply: text }; }
             if(typeof data.reply !== 'string') data = { ...data, reply: text };
             appendMessageToUI('tutor', data);
+            updateProgressUI(data);
         }
     });
-
-    const history = chat.history;
-    //const num = history.length - 1;
-    const dataforui = history[history.length].parts[0];
-    updateProgressUI(dataforui);
 }
 
 document.addEventListener("DOMContentLoaded", () => {

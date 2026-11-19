@@ -322,6 +322,59 @@ body{
     margin: 3px;
 }
 
+/* Homework Section */
+
+.homework{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-align: center;
+    max-width: 90%;
+    margin-top: 20px;
+    margin-left: 5%;
+    margin-right: 5%;
+}
+
+.homeworkItem p{
+    color: #1b2559;
+    font-size: 16px;
+}
+
+.homeworkItem{
+    display: flex;
+    flex-direction: column;
+    background-color: #fff;
+    width: 100%;
+    height: fit-content;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #5A6490;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 10px;
+    border-radius: 20px;
+    margin: 10px;
+    cursor: pointer;
+}
+
+.progress-bar-container{
+    background-color: #f0f5ff;
+    max-width: 90%;
+    width: 100%;
+    height: 8px;
+    border-radius: 999px;
+}
+
+.progress-fill{
+    background-color: #4B5BFF;
+    width: 50%;
+    height: 8px;
+    border-radius: 999px;
+}
+
 /* Name Input Styles */
 
 #name-input-container{
