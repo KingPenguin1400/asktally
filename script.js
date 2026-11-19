@@ -9,6 +9,7 @@ import { GoogleGenAI, Type } from "https://esm.run/@google/genai";
 //const apiKey = process.env.GEMINI_API_KEY; // Use the environment variable for the API key
 let STORAGE_KEY = 'tally_chit_chats';
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY; // Use the environment variable for the API key in Vite
+console.log('key present:', !!apiKey, 'length:', apiKey?.length);
 const ai = new GoogleGenAI({ apiKey: apiKey });
 
 const tallyPersona = `
